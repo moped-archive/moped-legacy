@@ -1,0 +1,23 @@
+{
+  "name": "moped",
+  "version": "0.0.0",
+  "description": "A framework for real-time isomorphic applications",
+  "browser": {
+    "./lib/applet-server.js": "./lib/applet-client.js"
+  },
+  "dependencies": {
+    "qs": "~0.6.6",
+    "path-to-regexp": "~0.2.3",
+    "page": "~1.3.7",
+    "react": "~0.11.0",
+    "prepare-response": "~1.0.0",
+    "promise": "~5.0.0",
+    "browserify": "~4.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForbesLindesay/moped.git"
+  },
+  "author": "ForbesLindesay",
+  "license": "MIT"
+}
