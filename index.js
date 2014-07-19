@@ -24,6 +24,11 @@ exports.compileLayout = function (path) {
   var compiler = layoutCompilers[extension] ||
       layoutCompilers['*'] ||
       (layoutCompilers[extension] = require(extension).compileFile);
+
+  if (!compiler) {
+    throw new Error('There are is no layout compiler registered for ' + extension + ' and no default compiler is registered.');
+  }
+
   return compiler(path);
 };
 
