@@ -1,8 +1,7 @@
 'use strict';
 
-var parseUrl = require('url').parse;
-var qs = require('qs');
-var toRegex = require('path-to-regexp');
+var Promise = require('promise');
+var Route = require('./lib/route.js');
 
 // will load ./lib/applet-client.js on the client.
 var environment = require('./lib/applet-server.js');
@@ -14,6 +13,9 @@ function Applet() {
   this.handlers = [];
   if (this.init) this.init();
 }
+Applet.prototype.use = function (service) {
+  this.handlers.push(service);
+};
 Applet.prototype.get = function (path, handler) {
   if (typeof path !== 'string') {
     throw new TypeError('Expected the path to be a string but got ' + (typeof path));
@@ -21,10 +23,33 @@ Applet.prototype.get = function (path, handler) {
   if (typeof handler !== 'function') {
     throw new TypeError('Expected the handler to be functions but got ' + (typeof handler));
   }
-  this.handlers.push(new AppletRoute((path === '*') ? '(.*)' : path, handler));
+  this.handlers.push(new Route((path === '*') ? '(.*)' : path, handler));
 };
-Applet.prototype.handle = function (url, user, state) {
-  var request = new Request(url, user, state);
+Applet.prototype.handleFirst = function (request) {
+  var applet = this;
+  return new Promise(function (resolve, reject) {
+    function next(i) {
+      try {
+        if (i >= applet.handlers.length) return resolve(applet.handle(request));
+        if (applet.handlers[i].handleFirst) {
+          applet.handlers[i].handleFirst(request).then(function (result) {
+            if (result !== undefined) return resolve(result);
+            result = applet.handlers[i].handle(request);
+            next(i + 1);
+          }, reject);
+        } else {
+          var result = applet.handle(request);
+          if (result !== undefined) return resolve(result);
+          else return next(i + 1);
+        }
+      } catch (ex) {
+        reject(ex);
+      }
+    }
+    next(0);
+  });
+};
+Applet.prototype.handle = function (request) {
   var result;
   for (var i = 0; i < this.handlers.length; i++) {
     result = this.handlers[i].handle(request);
@@ -34,31 +59,3 @@ Applet.prototype.handle = function (url, user, state) {
 Object.keys(environment).forEach(function (key) {
   Applet.prototype[key] = environment[key];
 });
-
-function AppletRoute(path, handler) {
-  this.keys = [];
-  this.regex = toRegex(path, this.keys);
-  this.handler = handler;
-}
-AppletRoute.prototype.handle = function (req) {
-  var match;
-  req.params = {};
-  if (match = this.regex.exec(req.path)) {
-    for (var i = 0; i < this.keys.length; i++) {
-      req.params[this.keys[i].name] = match[i + 1];
-    }
-    return this.handler(req);
-  }
-};
-
-function Request(url, user, state) {
-  var u = parseUrl(url);
-  this.url = u.path;
-  this.path = u.pathname;
-  this.query = qs.parse(u.query);
-  this.user = user || null;
-  this.state = state;
-}
-Request.prototype.isAuthenticated = function () {
-  return !!this.user;
-};
