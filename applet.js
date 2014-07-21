@@ -27,18 +27,19 @@ Applet.prototype.get = function (path, handler) {
 };
 Applet.prototype.handleFirst = function (request) {
   var applet = this;
+  var refresh = applet.refresh ? applet.refresh.bind(applet) : noop;
   return new Promise(function (resolve, reject) {
     function next(i) {
       try {
         if (i >= applet.handlers.length) return resolve(applet.handle(request));
         if (applet.handlers[i].handleFirst) {
-          applet.handlers[i].handleFirst(request).then(function (result) {
+          applet.handlers[i].handleFirst(request, refresh).then(function (result) {
             if (result !== undefined) return resolve(result);
-            result = applet.handlers[i].handle(request);
+            result = applet.handlers[i].handle(request, refresh);
             next(i + 1);
           }, reject);
         } else {
-          var result = applet.handle(request);
+          var result = applet.handle(request, refresh);
           if (result !== undefined) return resolve(result);
           else return next(i + 1);
         }
@@ -50,12 +51,16 @@ Applet.prototype.handleFirst = function (request) {
   });
 };
 Applet.prototype.handle = function (request) {
+  var refresh = this.refresh ? this.refresh.bind(this) : noop;
   var result;
   for (var i = 0; i < this.handlers.length; i++) {
-    result = this.handlers[i].handle(request);
+    result = this.handlers[i].handle(request, refresh);
     if (result !== undefined) return result;
   }
 };
 Object.keys(environment).forEach(function (key) {
   Applet.prototype[key] = environment[key];
 });
+
+function noop() {
+}

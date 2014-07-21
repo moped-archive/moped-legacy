@@ -40,14 +40,13 @@ Service.prototype.every = function (path, handler) {
 };
 
 
-Service.prototype.handleFirst = function (request) {
+Service.prototype.handleFirst = function (request, refresh) {
   var loaders = this.loaders;
   return new Promise(function (resolve, reject) {
     function next(i) {
       if (i >= loaders.length) return resolve(undefined);
       try {
-        var result = loaders[i].handle(request);
-        Promise.resolve(loaders[i].handle(request)).done(function (res) {
+        Promise.resolve(loaders[i].handle(request, refresh)).done(function (res) {
           if (res !== undefined) return resolve(res);
           else return next(i + 1);
         }, reject);
@@ -58,10 +57,10 @@ Service.prototype.handleFirst = function (request) {
     next(0);
   });
 };
-Service.prototype.handle = function (request) {
+Service.prototype.handle = function (request, refresh) {
   var result;
   for (var i = 0; i < this.handlers.length; i++) {
-    result = this.handlers[i].handle(request);
+    result = this.handlers[i].handle(request, refresh);
     if (result !== undefined) return result;
   }
 };
