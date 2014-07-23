@@ -10,7 +10,7 @@
     "browserify": "~4.2.1",
     "clone": "~0.1.17",
     "deep-equal": "^0.2.1",
-    "moped-sync": "0.0.5",
+    "moped-sync": "0.0.7",
     "page": "~1.3.7",
     "path-to-regexp": "~0.2.3",
     "prepare-response": "~1.0.1",
