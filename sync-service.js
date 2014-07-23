@@ -6,7 +6,8 @@ var deepEqual = require('deep-equal');
 var service = require('./service.js');
 
 
-function createService(id, collections) {
+module.exports = createService;
+function createService(id) {
   var s = service();
 
   function readNext(db, delay) {
