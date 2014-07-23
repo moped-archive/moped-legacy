@@ -28,8 +28,8 @@ function createService(id) {
   }
 
   function setupClient(req, refresh) {
-    if (req.store[id]) {
-      req[id] = new Client(Object.keys(req.state[id + ':filter']), req.store[id]);
+    if (req.state[id]) {
+      req[id] = new Client(Object.keys(req.state[id + ':filter']), req.state[id]);
       if (service.isClient) {
         readNext(req[id]);
       }
@@ -63,11 +63,13 @@ function createService(id) {
     if (s.isServer) {
       if (isConstant) {
         s.first(function (req) {
-          s.state[id + ':filter'] = path;
+          console.log('constant-filter');
+          req.state[id + ':filter'] = path;
         });
       } else {
         s.first(path, function (req) {
-          s.state[id + ':filter'] = handler(req);
+          console.log('dynamic-filter');
+          req.state[id + ':filter'] = handler(req);
         });
       }
     }

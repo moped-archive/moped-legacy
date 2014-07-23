@@ -28,7 +28,7 @@ Applet.prototype.get = function (path, handler) {
   if (typeof handler !== 'function') {
     throw new TypeError('Expected the handler to be functions but got ' + (typeof handler));
   }
-  this.handlers.push(new Route((path === '*') ? '(.*)' : path, handler));
+  this.handlers.push(new Route(path, handler));
 };
 Applet.prototype.handleFirst = function (request) {
   var applet = this;
