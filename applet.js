@@ -11,10 +11,15 @@ module.exports = Applet;
 function Applet() {
   if (!this) return new Applet();
   this.handlers = [];
+  this.postHandlers = {};
   if (this.init) this.init();
 }
 Applet.prototype.use = function (service) {
   this.handlers.push(service);
+  Object.keys(service.postHandlers).forEach(function (handler) {
+    this.postHandlers[handler] = service.postHandlers[handler];
+  }.bind(this));
+  service.mount();
 };
 Applet.prototype.get = function (path, handler) {
   if (typeof path !== 'string') {

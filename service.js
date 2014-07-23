@@ -10,6 +10,8 @@ function Service() {
   this.getId = function (req) { return '*'; };
   this.loaders = [];
   this.handlers = [];
+  this.mountHandlers = [];
+  this.postHandlers = {};
 }
 Service.prototype.isServer = require('./lib/applet-server.js').isServer;
 Service.prototype.isClient = !Service.prototype.isServer;
@@ -38,7 +40,14 @@ Service.prototype.every = function (path, handler) {
   }
   this.handlers.push(new Route(path, handler));
 };
-
+Service.prototype.onMount = function (fn) {
+  this.mountHandlers.push(fn);
+};
+Service.prototype.mount = function () {
+  this.mountHandlers.forEach(function (handler) {
+    handler();
+  });
+};
 
 Service.prototype.handleFirst = function (request, refresh) {
   var loaders = this.loaders;
@@ -64,3 +73,24 @@ Service.prototype.handle = function (request, refresh) {
     if (result !== undefined) return result;
   }
 };
+
+if (Service.prototype.isServer) {
+  Service.prototype.post = function (method, handler) {
+    this.postHandlers[method] = handler;
+  };
+} else {
+  var request = require('then-request');
+  Service.prototype.post = function (method) {
+    var args = [];
+    for (var i = 1; i < arguments.length; i++) {
+      args.push(arguments[i]);
+    }
+    return request(this.basepath + '/' + method, {
+      method: 'POST',
+      body: JSON.stringify(args),
+      headers: { 'content-type': 'application/json' }
+    }).then(function (res) {
+      return JSON.parse(res.getBody());
+    });
+  };
+}
