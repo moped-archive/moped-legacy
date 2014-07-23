@@ -3,25 +3,25 @@
 var Promise = require('promise');
 var Route = require('./lib/route.js');
 
-// will load ./lib/applet-client.js on the client.
-var environment = require('./lib/applet-server.js');
+// will load ./lib/app-client.js on the client.
+var environment = require('./lib/app-server.js');
 
-module.exports = Applet;
+module.exports = App;
 
-function Applet() {
-  if (!this) return new Applet();
+function App() {
+  if (!this) return new App();
   this.handlers = [];
   this.postHandlers = {};
   if (this.init) this.init();
 }
-Applet.prototype.use = function (service) {
+App.prototype.use = function (service) {
+  service.mount(this);
   this.handlers.push(service);
   Object.keys(service.postHandlers).forEach(function (handler) {
     this.postHandlers[handler] = service.postHandlers[handler];
   }.bind(this));
-  service.mount();
 };
-Applet.prototype.get = function (path, handler) {
+App.prototype.get = function (path, handler) {
   if (typeof path !== 'string') {
     throw new TypeError('Expected the path to be a string but got ' + (typeof path));
   }
@@ -30,21 +30,21 @@ Applet.prototype.get = function (path, handler) {
   }
   this.handlers.push(new Route(path, handler));
 };
-Applet.prototype.handleFirst = function (request) {
-  var applet = this;
-  var refresh = applet.refresh ? applet.refresh.bind(applet) : noop;
+App.prototype.handleFirst = function (request) {
+  var app = this;
+  var refresh = app.refresh ? app.refresh.bind(app) : noop;
   return new Promise(function (resolve, reject) {
     function next(i) {
       try {
-        if (i >= applet.handlers.length) return resolve(applet.handle(request));
-        if (applet.handlers[i].handleFirst) {
-          applet.handlers[i].handleFirst(request, refresh).then(function (result) {
+        if (i >= app.handlers.length) return resolve(app.handle(request));
+        if (app.handlers[i].handleFirst) {
+          app.handlers[i].handleFirst(request, refresh).then(function (result) {
             if (result !== undefined) return resolve(result);
-            result = applet.handlers[i].handle(request, refresh);
+            result = app.handlers[i].handle(request, refresh);
             next(i + 1);
           }, reject);
         } else {
-          var result = applet.handle(request, refresh);
+          var result = app.handle(request, refresh);
           if (result !== undefined) return resolve(result);
           else return next(i + 1);
         }
@@ -55,7 +55,7 @@ Applet.prototype.handleFirst = function (request) {
     next(0);
   });
 };
-Applet.prototype.handle = function (request) {
+App.prototype.handle = function (request) {
   var refresh = this.refresh ? this.refresh.bind(this) : noop;
   var result;
   for (var i = 0; i < this.handlers.length; i++) {
@@ -64,7 +64,7 @@ Applet.prototype.handle = function (request) {
   }
 };
 Object.keys(environment).forEach(function (key) {
-  Applet.prototype[key] = environment[key];
+  App.prototype[key] = environment[key];
 });
 
 function noop() {

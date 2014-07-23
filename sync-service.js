@@ -12,7 +12,7 @@ function createService(id) {
 
   function readNext(db, delay) {
     delay = delay || 1
-    s.post('getUpdate', db.next).done(function (result) {
+    s.post('get-update', db.next).done(function (result) {
       db.writeUpdate(result);
       readNext(db);
     }, function (err) {
@@ -30,7 +30,7 @@ function createService(id) {
   function setupClient(req, refresh) {
     if (req.state[id]) {
       req[id] = new Client(Object.keys(req.state[id + ':filter']), req.state[id]);
-      if (service.isClient) {
+      if (s.isClient) {
         readNext(req[id]);
       }
       req[id].onUpdate(refresh);
@@ -40,7 +40,7 @@ function createService(id) {
         if (req[id].getNumberOfLocalChanges() === 0) {
           return handlingChanges = false;
         }
-        s.post('writeUpdate', req[id].getFirstLocalChange()).done(function () {
+        s.post('write-update', req[id].getFirstLocalChange()).done(function () {
           req[id].setFirstLocalChangeHandled();
           handleChange();
         }, function (err) {
@@ -63,12 +63,10 @@ function createService(id) {
     if (s.isServer) {
       if (isConstant) {
         s.first(function (req) {
-          console.log('constant-filter');
           req.state[id + ':filter'] = path;
         });
       } else {
         s.first(path, function (req) {
-          console.log('dynamic-filter');
           req.state[id + ':filter'] = handler(req);
         });
       }
@@ -82,6 +80,12 @@ function createService(id) {
   };
   if (s.isServer) {
     s.onMount(function () {
+      s.post('write-update', function (update) {
+        return conn.writeUpdate(update);
+      });
+      s.post('get-update', function (id) {
+        return conn.getUpdate(id);
+      });
       s.first(function (req, refresh) {
         if (!req.state[id + ':filter']) return;
         return conn.getInitial(req.state[id + ':filter']).then(function (initial) {

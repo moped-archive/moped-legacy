@@ -13,7 +13,7 @@ function Service() {
   this.mountHandlers = [];
   this.postHandlers = {};
 }
-Service.prototype.isServer = require('./lib/applet-server.js').isServer;
+Service.prototype.isServer = require('./lib/app-server.js').isServer;
 Service.prototype.isClient = !Service.prototype.isServer;
 Service.prototype.id = function (path, handler) {
   if (arguments.length === 1) {
@@ -43,9 +43,10 @@ Service.prototype.every = function (path, handler) {
 Service.prototype.onMount = function (fn) {
   this.mountHandlers.push(fn);
 };
-Service.prototype.mount = function () {
+Service.prototype.mount = function (app) {
+  this.app = app;
   this.mountHandlers.forEach(function (handler) {
-    handler();
+    handler(app);
   });
 };
 
@@ -85,7 +86,7 @@ if (Service.prototype.isServer) {
     for (var i = 1; i < arguments.length; i++) {
       args.push(arguments[i]);
     }
-    return request(this.basepath + '/' + method, {
+    return request(this.app.basepath.replace(/\/$/, '') + '/' + method, {
       method: 'POST',
       body: JSON.stringify(args),
       headers: { 'content-type': 'application/json' }
