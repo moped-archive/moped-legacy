@@ -3,16 +3,16 @@
 var Promise = require('promise');
 var Client = require('moped-sync/client');
 var deepEqual = require('deep-equal');
-var service = require('./service.js');
+var createApp = require('./app.js');
 
 
 module.exports = createService;
 function createService(id) {
-  var s = service();
+  var app = createApp();
 
   function readNext(db, delay) {
     delay = delay || 1
-    s.post('get-update', db.next).done(function (result) {
+    app.post('/' + id + '/get-update', db.next).done(function (result) {
       db.writeUpdate(result);
       readNext(db);
     }, function (err) {
@@ -23,70 +23,79 @@ function createService(id) {
     });
   }
 
-  if (s.isClient) {
-    s.first(setupClient);
+  if (IS_CLIENT) {
+    app.async(setupClient);
   }
 
   function setupClient(req, refresh) {
     if (req.state[id]) {
       req[id] = new Client(Object.keys(req.state[id + ':filter']), req.state[id]);
-      if (s.isClient) {
+      if (IS_CLIENT) {
         readNext(req[id]);
-      }
-      req[id].onUpdate(refresh);
-      var handlingChanges = false;
-      var handleChange = function () {
-        handlingChanges = true;
-        if (req[id].getNumberOfLocalChanges() === 0) {
-          return handlingChanges = false;
+        req[id].onUpdate(refresh);
+        var handlingChanges = false;
+        var handleChange = function () {
+          handlingChanges = true;
+          if (req[id].getNumberOfLocalChanges() === 0) {
+            return handlingChanges = false;
+          }
+          app .post('/' + id + '/write-update', req[id].getFirstLocalChange()).done(function () {
+            req[id].setFirstLocalChangeHandled();
+            handleChange();
+          }, function (err) {
+            console.error(err.stack);
+            handleChange();
+          });
         }
-        s.post('write-update', req[id].getFirstLocalChange()).done(function () {
-          req[id].setFirstLocalChangeHandled();
-          handleChange();
-        }, function (err) {
-          console.error(err.stack);
-          handleChange();
+        req[id].onLocalChange(function () {
+          if (!handlingChanges) handleChange();
         });
       }
-      req[id].onLocalChange(function () {
-        if (!handlingChanges) handleChange();
-      });
     }
   };
 
-  var conn;
-  s.connection = function (connection) {
+  var conn, updateChecker = function () { return true; };
+  app.connection = function (connection) {
     conn = connection;
   };
-  s.filter = function (path, handler) {
+  app.filter = function (path, handler) {
     var isConstant = arguments.length === 1 && typeof path === 'object';
-    if (s.isServer) {
+    if (IS_SERVER) {
       if (isConstant) {
-        s.first(function (req) {
+        app.async(function (req) {
           req.state[id + ':filter'] = path;
         });
       } else {
-        s.first(path, function (req) {
+        app.async(path, function (req) {
           req.state[id + ':filter'] = handler(req);
         });
       }
     }
-    if (s.isClient && !isConstant) {
-      s.every(path, function (req) {
+    if (IS_CLIENT && !isConstant) {
+      app.every(path, function (req) {
         var filter = handler(req);
         if (!deepEqual(req.state[id + ':filter'], filter)) return null;
       });
     }
   };
-  if (s.isServer) {
-    s.onMount(function () {
-      s.post('write-update', function (update) {
-        return conn.writeUpdate(update);
+  app.checkUpdate = function (handler) {
+    updateChecker = handler;
+  };
+  if (IS_SERVER) {
+    app.onMount(function () {
+      app.post('/' + id + '/write-update', function (req, update) {
+        return Promise.resolve(updateChecker(req, update)).then(function (allowed) {
+          if (allowed) {
+            return conn.writeUpdate(update);
+          } else {
+            return Promise.reject(new Error('Access denied'));
+          }
+        });
       });
-      s.post('get-update', function (id) {
+      app.post('/' + id + '/get-update', function (req, id) {
         return conn.getUpdate(id);
       });
-      s.first(function (req, refresh) {
+      app.async(function (req, refresh) {
         if (!req.state[id + ':filter']) return;
         return conn.getInitial(req.state[id + ':filter']).then(function (initial) {
           req.state[id] = initial;
@@ -95,5 +104,5 @@ function createService(id) {
       });
     });
   }
-  return s;
+  return app;
 }
