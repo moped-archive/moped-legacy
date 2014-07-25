@@ -11,7 +11,7 @@
     "clone": "~0.1.17",
     "deep-equal": "^0.2.1",
     "envify": "^2.0.1",
-    "is-browser": "^2.0.0",
+    "is-browser": "^2.0.1",
     "is-browser-transform": "^1.0.2",
     "moped-router": "0.0.3",
     "moped-sync": "0.0.7",
