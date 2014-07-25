@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ForbesLindesay/moped.git"
+    "url": "https://github.com/mopedjs/moped.git"
   },
   "author": "ForbesLindesay",
   "license": "MIT"
