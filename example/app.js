@@ -1,5 +1,8 @@
 'use strict';
 
+// in your own apps you should do `require('moped/is-client')` or `require('moped/is-server')`
+var IS_SERVER = !require('is-browser');
+
 var React = require('react');
 var app = require('../app')();
 
@@ -16,8 +19,8 @@ if (IS_SERVER) {
 sync.filter({values: {}});
 app.use(sync);
 
-// async indicates that this should only run on first load
-app.async('/', function (req) {
+// first indicates that this should only run on first load
+app.first('/', function (req) {
   // insert is a noop if the value already exists
   req.db.values.insert({_id: 'value', value: 'Edit me!'});
 });

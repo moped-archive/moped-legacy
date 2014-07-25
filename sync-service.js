@@ -5,6 +5,8 @@ var Client = require('moped-sync/client');
 var deepEqual = require('deep-equal');
 var createApp = require('./app.js');
 
+var IS_CLIENT = require('is-browser');
+var IS_SERVER = !require('is-browser');
 
 module.exports = createService;
 function createService(id) {
