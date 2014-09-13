@@ -47,7 +47,7 @@ var moped = require('moped/app');
 var app = moped();
 
 // set up a synchronised data-store called db
-var sync = require('moped/sync-service')('db');
+var sync = require('moped-sync-service')('db');
 
 if (IS_SERVER) {
   // on the server, we connect our synchronisation service to a sync-server
@@ -59,13 +59,13 @@ if (IS_SERVER) {
 sync.filter({values: {_id: 'value'}});
 app.use(sync);
 
-// async indicates that this should only run on first load
-app.first('/', function (req) {
+// init indicates that this should only run on first load
+app.init('/', function (req) {
   // insert is a noop if the value already exists
   req.db.values.insert({_id: 'value', value: 'Edit me!'});
 });
 
-app.get('/', function (req) {
+app.render('/', function (req) {
   return React.DOM.textarea({
     type: 'text',
     style: {display: 'block', height: '50em', width: '90%'},
