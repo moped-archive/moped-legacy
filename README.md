@@ -2,6 +2,12 @@
 
 A framework for real-time isomorphic applications
 
+ - same code runs server side and client side
+ - use React style components
+ - use node.js modules both server side and client side
+ - automatically cached builds if NODE_ENV === 'production'
+ - automatically re-builds when you refresh the browser if NODE_ENV === 'development'
+
 [![Build Status](https://img.shields.io/travis/mopedjs/moped/master.svg)](https://travis-ci.org/mopedjs/moped)
 [![Dependency Status](https://img.shields.io/gemnasium/mopedjs/moped.svg)](https://gemnasium.com/mopedjs/moped)
 [![NPM version](https://img.shields.io/npm/v/moped.svg)](https://www.npmjs.org/package/moped)
@@ -31,7 +37,7 @@ moped.layout(jade.compileFile(__dirname + '/layout.jade'));
 // `req.user` is automatically made available within the moped app
 
 // mount a moped app (you can have many of these
-app.use(require('./app.js');
+app.use(moped('./app.js'));
 
 app.listen(3000);
 ```
@@ -76,10 +82,7 @@ app.render('/', function (req) {
   });
 });
 
-module.exports = app.run({
-  filename: __filename // this option is always required
-  // you could override the layout here by specifying a "layout" option
-});
+module.exports = app.run();
 ```
 
 
@@ -113,17 +116,12 @@ moped.layoutCompiler(function (filename) {
     return src.replace('<component>', locals.component).replace('<client>', locals.client);
   };
 };
-```
 
-Then in a moped app you can do:
-
-```js
-module.exports = app.run({
-  filename: __filename,
+// then when you mount the app you can do:
+app.use(moped(__dirname + '/app.js', {
   layout: __dirname + '/layout.jade' // this will get compiled as jade
-});
+}));
 ```
-
 
 #### moped.layout(fn)
 
