@@ -70,7 +70,7 @@ function runMopedApp(filename, options) {
       })).then(function (script) {
         return script('GET', req.url, req.user, state);
       }).then(function (result) {
-        if (result === null) return next();
+        if (!result) return next();
 
         var html = '<div id="container">' + result.html + '</div>';
         var client = '<script id="client" data-base="' + base + '" data-state="' +
