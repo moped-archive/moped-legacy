@@ -37,6 +37,8 @@ function compileLayout(path) {
 exports = (module.exports = runMopedApp);
 function runMopedApp(filename, options) {
   options = options || {};
+  var scriptBase = options.scriptBase || '/static';
+  scriptBase = scriptBase.replace(/^\/|\/$/g, '') + '/';
   var PRODUCTION = typeof options.production === 'boolean' ?
     options.production :
     process.env.NODE_ENV === 'production';
@@ -59,7 +61,7 @@ function runMopedApp(filename, options) {
       transforms: transforms,
       cache: clientCache
     })).then(function (script) {
-      var scriptUrl = base + script.etag + '/client.js';
+      var scriptUrl = base + scriptBase + script.etag + '/client.js';
       if (req.originalUrl === scriptUrl) {
         return script.send(req, res, next);
       }
