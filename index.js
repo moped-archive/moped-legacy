@@ -1,5 +1,6 @@
 'use strict';
 
+var assert = require('assert');
 var parseJson = require('body-parser').json();
 var compileScript = require('./lib/compile-script.js');
 var compileScriptClient = require('./lib/compile-script-client.js');
@@ -134,5 +135,7 @@ exports.layoutCompiler = function (extension, fn) {
     fn = extension;
     extension = '*';
   }
+  assert(typeof extension === 'string', 'Layout extension must be a string');
+  assert(typeof fn === 'function', 'Layout compiler must be a function');
   layoutCompilers[extension] = fn;
 };
