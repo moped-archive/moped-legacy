@@ -2,6 +2,7 @@
 
 var assert = require('assert');
 var parseJson = require('body-parser').json();
+var mixin = require('utils-merge');
 var compileScript = require('./lib/compile-script.js');
 var compileScriptClient = require('./lib/compile-script-client.js');
 var BrowserifyCache = require('./lib/browserify-cache.js');
@@ -79,7 +80,17 @@ function runMopedApp(filename, options) {
         var client = '<script id="client" data-base="' + base + '" data-state="' +
             stringify(result.state) + '" data-user="' +
             stringify(req.user) + '" src="' + scriptUrl + '"></script>';
-        res.send(layout({component: html, client: client}));
+
+        var locals = {};
+        if (req.app && req.app.locals) {
+          mixin(locals, req.app.locals);
+        }
+        if (res.locals) {
+          mixin(locals, res.locals);
+        }
+        locals.component = html;
+        locals.client = client;
+        res.send(layout(locals));
       });
     }).done(null, next);
   }
