@@ -1,6 +1,6 @@
 {
   "name": "moped",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A framework for real-time isomorphic applications",
   "browser": {
     "./lib/app-server.js": "./lib/app-client.js"
@@ -23,7 +23,8 @@
     "resolve": "^1.0.0",
     "then-request": "0.0.4",
     "uglify-js": "^2.4.15",
-    "uglifyify": "^2.5.0"
+    "uglifyify": "^2.5.0",
+    "utils-merge": "^1.0.0"
   },
   "devDependencies": {
     "express": "^4.6.1",
