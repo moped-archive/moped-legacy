@@ -48,7 +48,8 @@ function runMopedApp(filename, options) {
   var clientCache = PRODUCTION ? null : new BrowserifyCache();
   var serverScript = compileScript(filename, {
     transforms: transforms,
-    cache: serverCache
+    cache: serverCache,
+    filter: options.filter
   });
   var clientScript = compileScriptClient(filename, {
     transforms: transforms,
@@ -70,7 +71,8 @@ function runMopedApp(filename, options) {
       var state = req.state || {};
       return (PRODUCTION ? serverScript : compileScript(filename, {
         transforms: transforms,
-        cache: serverCache
+        cache: serverCache,
+        filter: options.filter
       })).then(function (script) {
         return script('GET', req.url, req.user, state);
       }).then(function (result) {
@@ -99,7 +101,8 @@ function runMopedApp(filename, options) {
       if (err) return next(err);
       return (PRODUCTION ? serverScript : compileScript(filename, {
         transforms: transforms,
-        cache: serverCache
+        cache: serverCache,
+        filter: options.filter
       })).then(function (script) {
         return script('POST', req.url, req.user, res.body);
       }).done(function (result) {
