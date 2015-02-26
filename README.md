@@ -7,6 +7,7 @@ A framework for real-time isomorphic applications
  - use node.js modules both server side and client side
  - automatically cached builds if NODE_ENV === 'production'
  - automatically re-builds when you refresh the browser if NODE_ENV === 'development'
+ - easilly build applications that gracefully degrade when users don't have JavaScript
 
 [![Build Status](https://img.shields.io/travis/mopedjs/moped/master.svg)](https://travis-ci.org/mopedjs/moped)
 [![Dependency Status](https://img.shields.io/gemnasium/mopedjs/moped.svg)](https://gemnasium.com/mopedjs/moped)
@@ -17,6 +18,8 @@ A framework for real-time isomorphic applications
     npm install moped
 
 ## Usage
+
+For a complete example, check out the "example" directory.  It contains a complete isomorphic real-time chat application (using long polling).  It's even fully functional without JavaScript (but requires users to refresh their browsers).
 
 server.js
 ```js
@@ -34,9 +37,12 @@ moped.transform({global: true}, require('react-jade'));
 moped.layout(jade.compileFile(__dirname + '/layout.jade'));
 
 // do normal express style authentication/provide express style APIs here
-// `req.user` is automatically made available within the moped app
+// `req.user` is automatically made available within the moped app so
+// passport.js will work seamlessly with moped
 
-// mount a moped app (you can have many of these
+// mount a moped app (you can have many of these in a single express app)
+// you can also mount them under sub-paths if only part of your app
+// is moped based
 app.use(moped('./app.js'));
 
 app.listen(3000);
@@ -52,32 +58,15 @@ var moped = require('moped/app');
 
 var app = moped();
 
-// set up a synchronised data-store called db
-var sync = require('moped-sync-service')('db');
-
-if (IS_SERVER) {
-  // on the server, we connect our synchronisation service to a sync-server
-  var MemoryServer = require('moped-sync/memory-server');
-  sync.connection(new MemoryServer());
-}
-
-// we specify the collections we are interested and how they should be filtered
-sync.filter({values: {_id: 'value'}});
-app.use(sync);
-
-// init indicates that this should only run on first load
-app.init('/', function (req) {
-  // insert is a noop if the value already exists
-  req.db.values.insert({_id: 'value', value: 'Edit me!'});
+app.get('/', function (req, res) {
+  res.setProps({value: 'default text'});
 });
-
-app.render('/', function (req) {
-  return React.DOM.textarea({
+app.get('/', function (req, res) {
+  return res.render('textarea', {
     type: 'text',
     style: {display: 'block', height: '50em', width: '90%'},
-    value: req.db.values.find({_id: 'value'})[0].value,
     onChange: function (e) {
-      req.db.values.update({_id: 'value'}, {value: e.target.value});
+      res.setProps({value: e.target.value});
     }
   });
 });
@@ -91,6 +80,26 @@ module.exports = app.run();
 ### moped
 
 Methods to configure moped at a global level.
+
+Usage:
+
+```js
+var express = require('express');
+var moped = require('moped');
+
+var app = express();
+
+app.use(moped(__dirname + '/app.js', options));
+
+app.listen(3000);
+```
+
+Options:
+
+ - `scriptBase` (default: `/static`) - The base path at which to host the client side JavaScript.
+ - `production` (default: `process.env.NODE_ENV === 'production'`) - Set this to `true` or `false` to override the default.  When `true`, all compilation is fully cached.
+ - `filter` (default: `(id) => true`) - A function that takes the string given to a `require` call and returns `true` to process it through moped and `false` to skip moped processing on it.  You generally don't want moped to process files that manage connection pools to databases.  Files required via `node_modules` are never processed.
+ - `layout` (default: `./lib/default-layout.js`) - A layout function (or a filename if you have specified a layout compiler)
 
 #### moped.transform(opts, transform)
 
@@ -131,49 +140,17 @@ Define the default template function.  This must simple be a function that takes
 
 The core application functionality.  This is a [moped-router](https://github.com/mopedjs/moped-router) with the following methods:
 
-#### app.async(path?, handler) / app.first(path?, handler)
+#### app.METHOD(path?, handler)
 
-Registers an asynchronous handler (i.e. one that may return a promise). These are called for every server request and just the first client request. You can use these to initialize any state that is needed for the application to run.
+Registers a handler at a given path. You can use these to initialize any state that is needed for the application to run.  This is where you put the bulk of your server side logic, as well as where you tell moped which top level react component to render.
 
-This has two aliases that do the same thing, to help you express intent.
+#### app.run()
 
-#### app.get(path?, handler) / app.sync(path?, handler) / app.every(path?, handler)
-
-Registers a synchronous handler. This is where the bulk of your application happens. These are run on every request, and are only allowed to be synchronous (to ensure react can re-render the view synchronously).
-
-This has three aliases that do the same thing, to help you express intent.
-
-#### app.post(path?, handler) / app.post(path, ...args)
-
-This method behaves differently on the server and the client.  On the client, you can call:
-
-```js
-if (require('moped/is-client')) {
-  app.post('/my-method', 'hello', 'world').done(function (result) {
-    alert(result);
-  });
-}
-```
-
-Then on the server you can handle that call:
-
-```js
-if (require('moped/is-server')) {
-  app.post('/my-method', function (req, arg1, arg2) {
-    // you can access databases and return promises etc
-    // from here
-    return arg1 + ' ' + arg2;
-  });
-}
-```
+Call this only on your route moped application, and export the result.  On the server, this builds the express middleware.  On the client, this binds to the HTML5 push-state API and runs the initial route.
 
 ### moped/is-client and moped/is-server
 
 Exports `true` or `false` to indicate whether you are running on the server or not.  Dead code elimination is used on the client, so you can safely use it to have code only run on the server.
-
-### moped/sync-service
-
-A moped/app that you can load to provide real time data synchronisation really easily.  This bit is still very much a work in progress and the API has yet to stabalise.
 
 ## License
 

@@ -2,7 +2,8 @@
 
 var assert = require('assert');
 var parseJson = require('body-parser').json();
-var mixin = require('utils-merge');
+var parseForm = require('body-parser').urlencoded({extended: true});
+var assign = require('object-assign');
 var compileScript = require('./lib/compile-script.js');
 var compileScriptClient = require('./lib/compile-script-client.js');
 var BrowserifyCache = require('./lib/browserify-cache.js');
@@ -59,7 +60,7 @@ function runMopedApp(filename, options) {
   if (typeof layout !== 'function') {
     layout = compileLayout(layout);
   }
-  function handleGet(base, req, res, next) {
+  function handle(base, req, res, next) {
     (PRODUCTION ? clientScript : compileScriptClient(filename, {
       transforms: transforms,
       cache: clientCache
@@ -68,48 +69,35 @@ function runMopedApp(filename, options) {
       if (req.originalUrl === scriptUrl) {
         return script.send(req, res, next);
       }
-      var state = req.state || {};
       return (PRODUCTION ? serverScript : compileScript(filename, {
         transforms: transforms,
         cache: serverCache,
         filter: options.filter
       })).then(function (script) {
-        return script('GET', req.url, req.user, state);
+        return script(req.method.toLowerCase(), req.url, req.user, req.body);
       }).then(function (result) {
         if (!result) return next();
+        if (result.type === 'component') {
+          var html = '<div id="container">' + result.html + '</div>';
+          var client = '<script id="client" data-base="' + base +
+              '" data-props="' +
+              stringify(result.props) + '" data-user="' +
+              stringify(req.user) + '" src="' + scriptUrl + '"></script>';
 
-        var html = '<div id="container">' + result.html + '</div>';
-        var client = '<script id="client" data-base="' + base + '" data-state="' +
-            stringify(result.state) + '" data-user="' +
-            stringify(req.user) + '" src="' + scriptUrl + '"></script>';
-
-        var locals = {};
-        if (req.app && req.app.locals) {
-          mixin(locals, req.app.locals);
+          var locals = assign(
+            {},
+            req.app && req.app.locals,
+            res.locals,
+            { component: html, client: client }
+          );
+          res.send(layout(locals));
+        } else if (result.type === 'json') {
+          res.json(result.value);
+        } else if (result.type === 'redirect') {
+          res.redirect(result.location);
         }
-        if (res.locals) {
-          mixin(locals, res.locals);
-        }
-        locals.component = html;
-        locals.client = client;
-        res.send(layout(locals));
       });
     }).done(null, next);
-  }
-  function handlePost(base, req, res, next) {
-    parseJson(req, res, function (err) {
-      if (err) return next(err);
-      return (PRODUCTION ? serverScript : compileScript(filename, {
-        transforms: transforms,
-        cache: serverCache,
-        filter: options.filter
-      })).then(function (script) {
-        return script('POST', req.url, req.user, res.body);
-      }).done(function (result) {
-        if (result !== undefined) res.json(result);
-        else next();
-      }, next);
-    });
   }
   return function (req, res, next) {
     if (req.route !== undefined) {
@@ -117,15 +105,21 @@ function runMopedApp(filename, options) {
       return next(err);
     }
     var base = '/';
-    if (req.originalUrl !== req.url) {
+    if (req.url === '/') {
+      base = req.originalUrl.replace(/\/$/, '') + '/';
+    } else if (req.originalUrl !== req.url) {
       if (req.originalUrl.substr(-(req.url.length)) !== req.url) {
         throw new Error('Cannot reconcile mount point from ' + JSON.stringify(req.url) + ' ' + JSON.stringify(req.originalUrl));
       }
       base = req.originalUrl.substr(0, req.originalUrl.length - req.url.length) + '/';
     }
-    if (req.method === 'GET') return handleGet(base, req, res, next);
-    if (req.method === 'POST') return handlePost(base, req, res, next);
-    return next();
+    parseJson(req, res, function (err) {
+      if (err) return next(err);
+      parseForm(req, res, function (err) {
+        if (err) return next(err);
+        handle(base, req, res, next);
+      });
+    });
   };
 }
 
