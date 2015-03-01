@@ -25,7 +25,9 @@
     "uglifyify": "^3.0.1"
   },
   "devDependencies": {
+    "cookie-session": "^1.1.0",
     "express": "^4.6.1",
+    "lusca": "^1.0.2",
     "react": "~0.12.0",
     "slugg": "^0.1.2"
   },

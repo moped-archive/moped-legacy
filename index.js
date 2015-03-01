@@ -74,7 +74,7 @@ function runMopedApp(filename, options) {
         cache: serverCache,
         filter: options.filter
       })).then(function (script) {
-        return script(req.method.toLowerCase(), req.url, req.user, req.body, base);
+        return script(req.method.toLowerCase(), req.url, req.user, req.body, base, res.locals._csrf);
       }).then(function (result) {
         if (!result) return next();
         if (result.type === 'component') {
@@ -82,7 +82,8 @@ function runMopedApp(filename, options) {
           var client = '<script id="client" data-base="' + base +
               '" data-props="' +
               stringify(result.props) + '" data-user="' +
-              stringify(req.user) + '" src="' + scriptUrl + '"></script>';
+              stringify(req.user) + '" src="' + scriptUrl +
+              '" data-csrf="' + res.locals._csrf + '"></script>';
 
           var locals = assign(
             {},

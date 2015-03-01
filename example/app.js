@@ -38,7 +38,7 @@ app.get('/:room', function (req, res) {
     'get',
     '/:room/messages'
   ).then(function (messages) {
-    res.setProps({messages: messages});
+    res.setProps({messages: messages}, {save: true});
   });
 });
 app.get('/:room', function (req, res) {

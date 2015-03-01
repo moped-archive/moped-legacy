@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('react');
+var CsrfToken = require('../../csrf-token');
 
 module.exports = React.createClass({
   displayName: 'InputForm',
@@ -20,6 +21,7 @@ module.exports = React.createClass({
         onSubmit: this.onSubmit,
         method: this.props.method
       },
+      React.createElement(CsrfToken),
       React.createElement('div', {className: 'row'},
         React.createElement('div', {className: 'col-xs-9'},
           React.createElement('input', {
