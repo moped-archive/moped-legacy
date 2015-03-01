@@ -74,7 +74,7 @@ function runMopedApp(filename, options) {
         cache: serverCache,
         filter: options.filter
       })).then(function (script) {
-        return script(req.method.toLowerCase(), req.url, req.user, req.body);
+        return script(req.method.toLowerCase(), req.url, req.user, req.body, base);
       }).then(function (result) {
         if (!result) return next();
         if (result.type === 'component') {
