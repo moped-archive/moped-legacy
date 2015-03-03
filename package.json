@@ -1,6 +1,6 @@
 {
   "name": "moped",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A framework for real-time isomorphic applications",
   "browser": {
     "./lib/app-server.js": "./lib/app-client.js"
