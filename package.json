@@ -1,38 +1,39 @@
 {
   "name": "moped",
-  "version": "0.6.2",
-  "description": "A framework for real-time isomorphic applications",
-  "browser": {
-    "./lib/app-server.js": "./lib/app-client.js"
-  },
+  "version": "0.7.0",
+  "description": "Express middleware for building universal JavaScript applications with React and Redux",
+  "keywords": [],
+  "main": "./lib/server.js",
   "dependencies": {
-    "body-parser": "^1.12.0",
-    "browserify": "^9.0.3",
-    "envify": "^3.2.0",
-    "ert": "^1.0.1",
-    "is-browser": "^2.0.1",
-    "is-browser-transform": "^1.0.3",
-    "module-deps": "^3.5.6",
-    "moped-router": "^3.0.0",
-    "object-assign": "^2.0.0",
-    "page": "^1.6.0",
-    "prepare-response": "^1.1.2",
-    "promise": "^6.1.0",
-    "qs": "^2.3.3",
-    "resolve": "^1.0.0",
-    "then-request": "^2.1.1",
-    "uglify-js": "^2.4.16",
-    "uglifyify": "^3.0.1"
-  },
-  "devDependencies": {
-    "cookie-session": "^1.1.0",
-    "express": "^4.6.1",
-    "lusca": "^1.0.2",
-    "react": "~0.12.0",
-    "slugg": "^0.1.2"
+    "babel-core": "^5.8.25",
+    "barrage": "^1.1.0",
+    "body-parser": "^1.14.1",
+    "browserify-middleware": "^7.0.0",
+    "chokidar": "^1.1.0",
+    "escape-html": "^1.0.3",
+    "express": "^4.13.3",
+    "history": "^1.11.1",
+    "promise": "^7.0.4",
+    "redux": "^3.0.2",
+    "redux-wait": "0.0.3",
+    "resolve": "^1.1.6",
+    "then-request": "^2.1.1"
   },
   "peerDependencies": {
-    "react": "*"
+    "react": "^0.13.3",
+    "react-redux": "^3.0.1",
+    "react-router": "^1.0.0-rc1"
+  },
+  "devDependencies": {
+    "babel": "^5.8.23",
+    "babel-istanbul": "^0.3.20",
+    "testit": "^2.0.2"
+  },
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "babel src --out-dir lib",
+    "test": "babel-node test/index.js",
+    "coverage": "babel-node node_modules/.bin/babel-istanbul cover test/index.js"
   },
   "repository": {
     "type": "git",
