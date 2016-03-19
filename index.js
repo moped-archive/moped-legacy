@@ -101,10 +101,6 @@ function runMopedApp(filename, options) {
     }).done(null, next);
   }
   return function (req, res, next) {
-    if (req.route !== undefined) {
-      var err = new Error('You can only mount an app using "app.use(app)", you cannot use "app.get(\'/path\', app)"');
-      return next(err);
-    }
     var base = '/';
     if (req.url === '/') {
       base = req.originalUrl.replace(/\/$/, '') + '/';
